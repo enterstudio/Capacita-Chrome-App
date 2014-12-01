@@ -1,4 +1,9 @@
 const serial = chrome.serial;
+var connectionOpts = {
+  'bitrate' : 115200
+};
+
+var sendQueue = [];
 
 /* Interprets an ArrayBuffer as UTF-8 encoded string data. */
 var ab2str = function(buf) {
@@ -14,6 +19,7 @@ var str2ab = function(str) {
   for (var i = 0; i < encodedString.length; ++i) {
     bytes[i] = encodedString.charCodeAt(i);
   }
+  
   return bytes.buffer;
 };
 
@@ -70,7 +76,16 @@ SerialConnection.prototype.send = function(msg) {
   if (this.connectionId < 0) {
     throw 'Invalid connection';
   }
-  serial.send(this.connectionId, str2ab(msg), function() {});
+  if (Array.isArray(msg)) {
+    for(n in msg) {
+      serial.send(this.connectionId, str2ab(msg[n]), function(sendInfo) {});    
+      sendQueue.push(msg[n]);
+    }
+    // console.log('sent array');
+  } else {
+    serial.send(this.connectionId, str2ab(msg), function(sendInfo) {});
+    // console.log('sent string')
+  }
 };
 
 SerialConnection.prototype.disconnect = function() {
@@ -85,29 +100,27 @@ SerialConnection.prototype.disconnect = function() {
 
 serial.getDevices(function(ports) {
 
-  console.log('fetching ports');
-  console.log(ports);
-
   var selectList = document.querySelector('select#serialPorts');
   for(p in ports) {
-
     tmpOption = document.createElement("option");
     tmpOption.value = ports[p].path;
     tmpOption.text = ports[p].path;
     selectList.appendChild(tmpOption);
   }
-})
+
+});
 
 var connection = new SerialConnection();
 
 connection.onConnect.addListener(function() {
   console.log('connected to: ' + DEVICE_PATH);
-  connection.send("hello arduino");
+  // connection.send("hello arduino");
 });
 
 connection.onReadLine.addListener(function(data) {
   console.log('serial: ' + data);
   var jsonData = JSON.stringify({
+    type:'serial',
     data:data.trim()
   });
   for (var i = 0; i < connectedSockets.length; i++) {
@@ -116,9 +129,6 @@ connection.onReadLine.addListener(function(data) {
 
 });
 
-var connectionOpts = {
-  'bitrate' : 115200
-};
 
 document.querySelector('button#connect').addEventListener('click', function() {
   
@@ -135,19 +145,22 @@ document.querySelector('button#connect').addEventListener('click', function() {
   
 });
 
-// document.querySelector('select#serialPorts').addEventListener('change', function() {
-//   console.log(this.value)
-// });
 
 function $(id) {
   return document.getElementById(id);
 }
 
-
+/////////////////////////////////////////////
 // Websocket Server
+/////////////////////////////////////////////
 
 var port = 9001;
 var isServer = false;
+
+// A list of connected websockets.
+var connectedSockets = [];
+
+
 if (http.Server && http.WebSocketServer) {
   // Listen for HTTP connections.
   var server = new http.Server();
@@ -164,23 +177,40 @@ if (http.Server && http.WebSocketServer) {
     return true;
   });
 
-  // A list of connected websockets.
-  var connectedSockets = [];
 
   wsServer.addEventListener('request', function(req) {
+    
     console.log('Client connected');
+    
     var socket = req.accept();
     connectedSockets.push(socket);
 
     // When a message is received on one socket, rebroadcast it on all
     // connected sockets.
     socket.addEventListener('message', function(e) {
-      console.log('received: ' + e.data);
-      if (connection) {
-        connection.send(e.data);
+      
+      var socketData = JSON.parse(e.data);
+      console.log(socketData);
+      // console.log(capacita.controllerMap);
+      // console.log('***************')
+      
+      
+      if (socketData.value != "*") {
+        var valueToSendPrepared = socketData.value.toString();
+      } else {
+        var valueToSendPrepared = socketData.value.toString(); // data['value'].encode('ascii','ignore');
       }
-      for (var i = 0; i < connectedSockets.length; i++)
-        connectedSockets[i].send(e.data + " oyoyoyoy from chrome server");
+
+      var cmdReceived = socketData.cmd;
+      if (capacita.controllerMap.hasOwnProperty(cmdReceived)) {
+        var cmdToSend = capacita.controllerMap[cmdReceived];
+
+        connection.send(cmdToSend+valueToSendPrepared);
+
+        // console.log(cmdToSend + " " + valueToSendPrepared);
+      }
+
+      
     });
 
     // When a socket is closed, remove it from the list of connected sockets.
