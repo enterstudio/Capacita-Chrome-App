@@ -1,4 +1,3 @@
-const DEVICE_PATH = '/dev/tty.RNBT-2BDF-RNI-SPP'; //'/dev/tty.usbmodem1421';
 const serial = chrome.serial;
 
 /* Interprets an ArrayBuffer as UTF-8 encoded string data. */
@@ -33,7 +32,7 @@ var SerialConnection = function() {
 
 SerialConnection.prototype.onConnectComplete = function(connectionInfo) {
   if (!connectionInfo) {
-    log("Connection failed.");
+    console.log("Connection failed.");
     return;
   }
   this.connectionId = connectionInfo.connectionId;
@@ -102,53 +101,50 @@ serial.getDevices(function(ports) {
 var connection = new SerialConnection();
 
 connection.onConnect.addListener(function() {
-  log('connected to: ' + DEVICE_PATH);
+  console.log('connected to: ' + DEVICE_PATH);
   connection.send("hello arduino");
 });
 
-connection.onReadLine.addListener(function(line) {
-  log('read line: ' + line);
+connection.onReadLine.addListener(function(data) {
+  console.log('serial: ' + data);
+  var jsonData = JSON.stringify({
+    data:data.trim()
+  });
+  for (var i = 0; i < connectedSockets.length; i++) {
+    connectedSockets[i].send(jsonData);
+  }
+
 });
-connectionOpts = {
+
+var connectionOpts = {
   'bitrate' : 115200
-}
-
-
-function log(msg) {
-  var buffer = document.querySelector('#buffer');
-  buffer.innerHTML += msg + '<br/>';
-}
-
-var is_on = false;
-document.querySelector('button#triggerBtn').addEventListener('click', function() {
-  is_on = !is_on;
-  connection.send(is_on ? 'y' : 'n');
-});
+};
 
 document.querySelector('button#connect').addEventListener('click', function() {
+  
   if (this.innerHTML == 'Disconnect') {
     connection.disconnect();
-    
     this.innerHTML = 'Connect';
 
   } else {
     // get selected port from list
     serialList = document.querySelector('select#serialPorts')
-
     connection.connect(serialList.value, connectionOpts);
     this.innerHTML = 'Disconnect';
   }
   
 });
 
-document.querySelector('select#serialPorts').addEventListener('change', function() {
-  console.log(this.value)
-});
+// document.querySelector('select#serialPorts').addEventListener('change', function() {
+//   console.log(this.value)
+// });
 
 function $(id) {
   return document.getElementById(id);
 }
 
+
+// Websocket Server
 
 var port = 9001;
 var isServer = false;
@@ -172,21 +168,24 @@ if (http.Server && http.WebSocketServer) {
   var connectedSockets = [];
 
   wsServer.addEventListener('request', function(req) {
-    log('Client connected');
+    console.log('Client connected');
     var socket = req.accept();
     connectedSockets.push(socket);
 
     // When a message is received on one socket, rebroadcast it on all
     // connected sockets.
     socket.addEventListener('message', function(e) {
-      log('received: ' + e.data);
+      console.log('received: ' + e.data);
+      if (connection) {
+        connection.send(e.data);
+      }
       for (var i = 0; i < connectedSockets.length; i++)
         connectedSockets[i].send(e.data + " oyoyoyoy from chrome server");
     });
 
     // When a socket is closed, remove it from the list of connected sockets.
     socket.addEventListener('close', function() {
-      log('Client disconnected');
+      console.log('Client disconnected');
       for (var i = 0; i < connectedSockets.length; i++) {
         if (connectedSockets[i] == socket) {
           connectedSockets.splice(i, 1);
@@ -198,30 +197,4 @@ if (http.Server && http.WebSocketServer) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  // log('This is a test of an HTTP and WebSocket server. This application is ' +
-  //     'serving its own source code on port ' + port + '. Each client ' +
-  //     'connects to the server on a WebSocket and all messages received on ' +
-  //     'one WebSocket are echoed to all connected clients - i.e. a chat ' +
-  //     'server. Enjoy!');
-  var address = isServer ? 'ws://localhost:' + port + '/' :
-      window.location.href.replace('http', 'ws');
-  // var ws = new WebSocket(address);
-  // ws.addEventListener('open', function() {
-  //   log('Connected');
-  // });
-  // ws.addEventListener('close', function() {
-  //   log('Connection lost');
-  //   $('input').disabled = true;
-  // });
-  // ws.addEventListener('message', function(e) {
-  //   log(e.data);
-  // });
-  $('input').addEventListener('keydown', function(e) {
-    if (ws && ws.readyState == 1 && e.keyCode == 13) {
-      ws.send(this.value);
-      this.value = '';
-    }
-  });
-});
 
