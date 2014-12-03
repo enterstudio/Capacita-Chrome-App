@@ -196,9 +196,17 @@ if (http.Server && http.WebSocketServer) {
       
       
       if (socketData.value != "*") {
-        var valueToSendPrepared = socketData.value.toString();
+        var tmpVal = socketData.value.toString();
+        if (tmpVal.length == 1) {
+          tmpVal = "00" + tmpVal;
+        } else if (tmpVal.length == 2) {
+          tmpVal = "0" + tmpVal;
+        }
+        var valueToSendPrepared =  tmpVal; // data['value'].encode('ascii','ignore');
+        console.log("value to send: " + valueToSendPrepared);
+        
       } else {
-        var valueToSendPrepared = socketData.value.toString(); // data['value'].encode('ascii','ignore');
+        var valueToSendPrepared = "**" + socketData.value.toString();
       }
 
       var cmdReceived = socketData.cmd;
