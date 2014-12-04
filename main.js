@@ -191,8 +191,6 @@ if (http.Server && http.WebSocketServer) {
       
       var socketData = JSON.parse(e.data);
       console.log(socketData);
-      // console.log(capacita.controllerMap);
-      // console.log('***************')
       
       
       if (socketData.value != "*") {
@@ -203,7 +201,7 @@ if (http.Server && http.WebSocketServer) {
           tmpVal = "0" + tmpVal;
         }
         var valueToSendPrepared =  tmpVal; // data['value'].encode('ascii','ignore');
-        console.log("value to send: " + valueToSendPrepared);
+        // console.log("value to send: " + valueToSendPrepared);
         
       } else {
         var valueToSendPrepared = "**" + socketData.value.toString();
