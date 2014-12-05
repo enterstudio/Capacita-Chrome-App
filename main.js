@@ -1,6 +1,6 @@
 const serial = chrome.serial;
 var connectionOpts = {
-  'bitrate' : 115200
+  'bitrate' : 9600
 };
 
 var sendQueue = [];
@@ -72,20 +72,53 @@ SerialConnection.prototype.connect = function(path) {
   serial.connect(path, this.onConnectComplete.bind(this))
 };
 
-SerialConnection.prototype.send = function(msg) {
+SerialConnection.prototype.sends = function(msg) {
   if (this.connectionId < 0) {
     throw 'Invalid connection';
   }
-  if (Array.isArray(msg)) {
-    for(n in msg) {
-      serial.send(this.connectionId, str2ab(msg[n]), function(sendInfo) {});    
-      sendQueue.push(msg[n]);
-    }
-    // console.log('sent array');
-  } else {
-    serial.send(this.connectionId, str2ab(msg), function(sendInfo) {});
-    // console.log('sent string')
+  serial.send(this.connectionId, str2ab(msg), function(sendInfo){}); // end cmd character  
+
+}
+SerialConnection.prototype.send = function(msg) {
+  var self = this;
+
+  if (this.connectionId < 0) {
+    throw 'Invalid connection';
   }
+
+  serial.send(self.connectionId, str2ab(msg), function(sendInfo){}); // end cmd character
+  // var msgArray = msg.split('');
+  // msgArray.push('.'); //end character for transmission
+
+  // var serialTasks = [];
+  // async.map(msgArray, function(c, callback) {
+  //   // create tmp function
+  //   tmpFunction =  function(cb){
+  //     serial.send(self.connectionId, str2ab(c), function(sendInfo){ 
+  //       console.log('sending : ' + c);
+
+  //       setTimeout(function(){
+  //         console.log('timer:'+c);
+  //         cb(null, true);  
+  //       }, 20);
+        
+  //     });
+      
+  //   };
+  //   callback(null,tmpFunction); // return function to map
+
+  // }, function(err, results) {
+  //   serialTasks = results; 
+  // });
+
+  // async.series(serialTasks, function(err, results){
+  //   if (err) {
+  //     console.warn(err);
+  //   }
+  //   // serial.send(self.connectionId, str2ab('.'), function(sendInfo){}); // end cmd character  
+  //   console.log("now send .")
+  // });
+  
 };
 
 SerialConnection.prototype.disconnect = function() {
@@ -201,7 +234,7 @@ if (http.Server && http.WebSocketServer) {
           tmpVal = "0" + tmpVal;
         }
         var valueToSendPrepared =  tmpVal; // data['value'].encode('ascii','ignore');
-        // console.log("value to send: " + valueToSendPrepared);
+        console.log("value to send: " + valueToSendPrepared);
         
       } else {
         var valueToSendPrepared = "**" + socketData.value.toString();
