@@ -59,6 +59,8 @@ SerialConnection.prototype.onReceive = function(receiveInfo) {
     var line = this.lineBuffer.substr(0, index + 1);
     this.onReadLine.dispatch(line);
     this.lineBuffer = this.lineBuffer.substr(index + 1);
+    
+
   }
 };
 
@@ -77,8 +79,8 @@ SerialConnection.prototype.sends = function(msg) {
     throw 'Invalid connection';
   }
   serial.send(this.connectionId, str2ab(msg), function(sendInfo){}); // end cmd character  
-
 }
+
 SerialConnection.prototype.send = function(msg) {
   var self = this;
 
@@ -87,37 +89,7 @@ SerialConnection.prototype.send = function(msg) {
   }
 
   serial.send(self.connectionId, str2ab(msg), function(sendInfo){}); // end cmd character
-  // var msgArray = msg.split('');
-  // msgArray.push('.'); //end character for transmission
-
-  // var serialTasks = [];
-  // async.map(msgArray, function(c, callback) {
-  //   // create tmp function
-  //   tmpFunction =  function(cb){
-  //     serial.send(self.connectionId, str2ab(c), function(sendInfo){ 
-  //       console.log('sending : ' + c);
-
-  //       setTimeout(function(){
-  //         console.log('timer:'+c);
-  //         cb(null, true);  
-  //       }, 20);
-        
-  //     });
-      
-  //   };
-  //   callback(null,tmpFunction); // return function to map
-
-  // }, function(err, results) {
-  //   serialTasks = results; 
-  // });
-
-  // async.series(serialTasks, function(err, results){
-  //   if (err) {
-  //     console.warn(err);
-  //   }
-  //   // serial.send(self.connectionId, str2ab('.'), function(sendInfo){}); // end cmd character  
-  //   console.log("now send .")
-  // });
+  
   
 };
 
@@ -158,6 +130,7 @@ connection.onReadLine.addListener(function(data) {
   });
   for (var i = 0; i < connectedSockets.length; i++) {
     connectedSockets[i].send(jsonData);
+
   }
 
 });
