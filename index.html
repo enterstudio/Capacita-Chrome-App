@@ -1,15 +1,38 @@
-<button style="position:absolute; right:0" id="connect">Connect</button>
-<button id="triggerBtn" style="position: absolute; bottom: 0">Press me</button>
-<div id="buffer">
-</div>
+<html>
+<head>
+	<title>Capacita by DIYAbility</title>
+	<link rel="stylesheet" type="text/css" href="assets/js/bower_components/bootstrap/dist/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="assets/js/bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
+</head>
+<body>
+	<div class="container">
+		<h1>Capacita</h1>
+		<p>Connection Manager</p>
+		<div id="buffer">
+		</div>
 
+		<form>
+			<div class="form-group">
+				<label for="serialPorts">Select bluetooth serial port</label>
+				<select id="serialPorts"></select>
+			</div>
+			<div class="form-group">
+				<button id="connect">Connect</button>		
+			</div>
 
-<select id="serialPorts"></select>
+		<!-- 
+		<input type="text" id="input" placeholder="Type a message to other connected clients here">
+		 -->
 
-<input type="text" id="input" placeholder="Type a message to other connected clients here">
+		</form>
+	</div>
+	<script src="assets/js/bower_components/jquery/dist/jquery.min.js"></script>
+	<script src="assets/js/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+	<script src="sha1.js"></script>
+	<script src="http.js"></script>
+	<script src="async.js"></script>
+	<script src="capacita.js"></script>
+	<script src="main.js"></script>
 
-<script src="sha1.js"></script>
-<script src="http.js"></script>
-<script src="async.js"></script>
-<script src="capacita.js"></script>
-<script src="main.js"></script>
+</body>
+</html>
