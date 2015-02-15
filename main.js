@@ -40,11 +40,15 @@ SerialConnection.prototype.onConnectComplete = function(connectionInfo) {
   if (!connectionInfo) {
     console.log("Connection failed.");
     return;
+  } else {
+
   }
   this.connectionId = connectionInfo.connectionId;
   chrome.serial.onReceive.addListener(this.boundOnReceive);
   chrome.serial.onReceiveError.addListener(this.boundOnReceiveError);
   this.onConnect.dispatch();
+
+  jQuery('button#connect').addClass('btn-primary').html('Disconnect');
 };
 
 SerialConnection.prototype.onReceive = function(receiveInfo) {
@@ -141,12 +145,13 @@ document.querySelector('button#connect').addEventListener('click', function() {
   if (this.innerHTML == 'Disconnect') {
     connection.disconnect();
     this.innerHTML = 'Connect';
+    jQuery(this).removeClass('btn-primary')
 
   } else {
     // get selected port from list
     serialList = document.querySelector('select#serialPorts')
     connection.connect(serialList.value, connectionOpts);
-    this.innerHTML = 'Disconnect';
+    // this.innerHTML = 'Disconnect';
   }
   
 });
