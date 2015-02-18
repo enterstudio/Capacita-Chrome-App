@@ -7,7 +7,7 @@ function startApp() {
   ga_service = analytics.getService('capacita_connection_manager');
 
   // Get a ga_Tracker using your Google Analytics app Tracking ID.
-  ga_tracker = ga_service.getTracker('UA-26973573-2');
+  ga_tracker = ga_service.getTracker('UA-26973573-3');
 
   // Start timing...
   var ga_timer_full_session = ga_tracker.startTiming('Session duration', 'Send Event');

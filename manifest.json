@@ -1,6 +1,6 @@
 {
   "name": "Capacita Connection Manager",
-  "version": "0.0.0.1",
+  "version": "0.0.0.3",
   "manifest_version": 2,
   "permissions": [
     "https://www.google-analytics.com/",
