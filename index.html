@@ -15,22 +15,32 @@
 			<div class="form-group">
 				<label for="serialPorts">Select bluetooth serial port</label>
 				<select id="serialPorts"></select>
+				<br>
+				<i>(connect to serial port starting with RNDT-XXXXXXX)</i>
+
 			</div>
 
 			<div class="form-group">
 				<button class="btn" id="connect">Connect</button>		
 			</div>
 
-
 		</form>
+
+		<hr>
+		<h4>Status: <span id="statusValue"></span></h4>
+		<p id="webapp_link">Visit <a id="applink" target="_blank" href="http://diyability-capacita.appspot.com/ctrl">http://diyability-capacita.appspot.com/ctrl</a> to play</p>
+		
 	</div>
 	<script src="assets/js/bower_components/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 	<script src="sha1.js"></script>
 	<script src="http.js"></script>
+	<script src="google-analytics-bundle.js"></script>
 	<script src="async.js"></script>
 	<script src="capacita.js"></script>
+	<script src="analytics.js"></script>
 	<script src="main.js"></script>
 
+	
 </body>
 </html>

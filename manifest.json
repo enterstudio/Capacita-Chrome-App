@@ -3,15 +3,18 @@
   "version": "0.0.0.1",
   "manifest_version": 2,
   "permissions": [
+    "https://www.google-analytics.com/",
     "serial",
     {"socket": [
       "tcp-connect",
-      "tcp-listen"]}
+      "tcp-listen"]
+    },
+    "storage"
   ],
   "minimum_chrome_version": "23",
   "icons": {
     "16": "noun_25290_16_cc.png",
-    "128": "noun_25290_128_cc.png"
+    "128": "noun_25290_cc.png"
   },
   "app": {
     "background": {

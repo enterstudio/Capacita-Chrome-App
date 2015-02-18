@@ -5,6 +5,13 @@ var connectionOpts = {
 
 var sendQueue = [];
 
+jQuery(document).ready(function() {
+  jQuery('#statusValue').html('Disconnected');
+  jQuery('#webapp_link').hide();
+  
+});
+
+
 /* Interprets an ArrayBuffer as UTF-8 encoded string data. */
 var ab2str = function(buf) {
   var bufView = new Uint8Array(buf);
@@ -49,6 +56,11 @@ SerialConnection.prototype.onConnectComplete = function(connectionInfo) {
   this.onConnect.dispatch();
 
   jQuery('button#connect').addClass('btn-primary').html('Disconnect');
+  jQuery('#statusValue').html('Connected');
+  jQuery('#webapp_link').show();
+  ga_tracker.sendEvent('Serial connect', 'true');
+  window.open('http://diyability-capacita.appspot.com/ctrl');
+
 };
 
 SerialConnection.prototype.onReceive = function(receiveInfo) {
@@ -102,6 +114,8 @@ SerialConnection.prototype.disconnect = function() {
     throw 'Invalid connection';
   }
   serial.disconnect(this.connectionId, function() {});
+  jQuery('#statusValue').html('Disconnected');
+  jQuery('#webapp_link').hide();
 };
 
 ////////////////////////////////////////////////////////
@@ -132,10 +146,14 @@ connection.onReadLine.addListener(function(data) {
     type:'serial',
     data:data.trim()
   });
+  
   for (var i = 0; i < connectedSockets.length; i++) {
     connectedSockets[i].send(jsonData);
-
   }
+
+  // Record switch press with "sendEvent".
+  ga_tracker.sendEvent('Switch press', data);
+
 
 });
 
@@ -243,5 +261,6 @@ if (http.Server && http.WebSocketServer) {
     return true;
   });
 }
+
 
 
