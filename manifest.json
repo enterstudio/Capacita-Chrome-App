@@ -13,12 +13,12 @@
   ],
   "minimum_chrome_version": "23",
   "icons": {
-    "16": "noun_25290_16_cc.png",
-    "128": "noun_25290_cc.png"
+    "16": "img/noun_25290_16_cc.png",
+    "128": "img/noun_25290_cc.png"
   },
   "app": {
     "background": {
-      "scripts": ["launch.js"],
+      "scripts": ["js/launch.js"],
       "transient": true
     }
   }
