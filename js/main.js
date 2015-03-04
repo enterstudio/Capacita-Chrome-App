@@ -2,7 +2,7 @@ const serial = chrome.serial;
 var connectionOpts = {
   'bitrate' : 9600
 };
-var currentVersion = 2;
+var currentVersion = 1; //default to v1 for now
 
 var sendQueue = [];
 
