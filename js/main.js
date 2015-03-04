@@ -2,6 +2,7 @@ const serial = chrome.serial;
 var connectionOpts = {
   'bitrate' : 9600
 };
+var currentVersion = 2;
 
 var sendQueue = [];
 
@@ -141,19 +142,29 @@ connection.onConnect.addListener(function() {
 });
 
 connection.onReadLine.addListener(function(data) {
-  console.log('serial: ' + data);
-  var jsonData = JSON.stringify({
-    type:'serial',
-    data:data.trim()
-  });
+
+  console.log('serial incoming: ' + data);
   
-  for (var i = 0; i < connectedSockets.length; i++) {
-    connectedSockets[i].send(jsonData);
+  // version ? eg. 'v2'
+  if (data[0] == 'v') {
+    currentVersion = parseInt[d[1]];
+    ga_tracker.sendEvent('Version', currentVersion); //record version in GA
+
+  } else {
+     var jsonData = JSON.stringify({
+      type:'serial',
+      data:data.trim()
+    });
+    
+    for (var i = 0; i < connectedSockets.length; i++) {
+      connectedSockets[i].send(jsonData);
+    }
+
+    // Record switch press with "sendEvent".
+    ga_tracker.sendEvent('Switch press', data);
+
   }
-
-  // Record switch press with "sendEvent".
-  ga_tracker.sendEvent('Switch press', data);
-
+ 
 
 });
 
@@ -214,36 +225,60 @@ if (http.Server && http.WebSocketServer) {
     var socket = req.accept();
     connectedSockets.push(socket);
 
-    // When a message is received on one socket, rebroadcast it on all
-    // connected sockets.
+    
     socket.addEventListener('message', function(e) {
       
       var socketData = JSON.parse(e.data);
       console.log(socketData);
       
-      
-      if (socketData.value != "*") {
+      if (currentVersion == 1) {
+        console.log("version 1 socket to serial");
+        //version 1 data to serial                
+        if (socketData.value != "*") {
+          var tmpVal = socketData.value.toString();
+          if (tmpVal.length == 1) {
+            tmpVal = "00" + tmpVal;
+          } else if (tmpVal.length == 2) {
+            tmpVal = "0" + tmpVal;
+          }
+          var valueToSendPrepared =  tmpVal; // data['value'].encode('ascii','ignore');
+          console.log("value to send: " + valueToSendPrepared);
+          
+        } else {
+          var valueToSendPrepared = "**" + socketData.value.toString();
+        }
+
+        var cmdReceived = socketData.cmd;
+        if (capacita.controllerMap.hasOwnProperty(cmdReceived)) {
+          var cmdToSend = capacita.controllerMap[cmdReceived];
+
+          connection.send(cmdToSend+valueToSendPrepared);
+
+          console.log(cmdToSend + " " + valueToSendPrepared);
+        }
+
+      } else if (currentVersion == 2) {
+
+        console.log("version 2 socket to serial");
+        //version 2 data to serial
+        
         var tmpVal = socketData.value.toString();
         if (tmpVal.length == 1) {
-          tmpVal = "00" + tmpVal;
-        } else if (tmpVal.length == 2) {
-          tmpVal = "0" + tmpVal;
+          var valueToSendPrepared = tmpVal;
+          console.log("value to send: " + valueToSendPrepared);
+          
+          var cmdReceived = socketData.cmd;
+          if (capacita.controllerMap.hasOwnProperty(cmdReceived)) {
+            var cmdToSend = capacita.controllerMap[cmdReceived];
+
+            connection.send(cmdToSend+valueToSendPrepared);
+
+            console.log(cmdToSend + " " + valueToSendPrepared);
+          }
+
         }
-        var valueToSendPrepared =  tmpVal; // data['value'].encode('ascii','ignore');
-        console.log("value to send: " + valueToSendPrepared);
-        
-      } else {
-        var valueToSendPrepared = "**" + socketData.value.toString();
       }
 
-      var cmdReceived = socketData.cmd;
-      if (capacita.controllerMap.hasOwnProperty(cmdReceived)) {
-        var cmdToSend = capacita.controllerMap[cmdReceived];
-
-        connection.send(cmdToSend+valueToSendPrepared);
-
-        // console.log(cmdToSend + " " + valueToSendPrepared);
-      }
 
       
     });
