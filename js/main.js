@@ -261,13 +261,20 @@ if (http.Server && http.WebSocketServer) {
 
         console.log("version 2 socket to serial");
         //version 2 data to serial
+
+        var cmdReceived = socketData.cmd;
+        var sendVal = socketData.value.toString();
         
-        var tmpVal = socketData.value.toString();
-        if (tmpVal.length == 1) {
-          var valueToSendPrepared = tmpVal;
+        if (capacita.analogCmds.indexOf(cmdReceived) > -1) {
+          console.log('analog cmd');
+          sendVal = Math.round(sendVal.map(0,255,1,9));
+        }
+
+
+        if (sendVal.length == 1) {
+          var valueToSendPrepared = sendVal;
           console.log("value to send: " + valueToSendPrepared);
           
-          var cmdReceived = socketData.cmd;
           if (capacita.controllerMap.hasOwnProperty(cmdReceived)) {
             var cmdToSend = capacita.controllerMap[cmdReceived];
 
@@ -298,4 +305,7 @@ if (http.Server && http.WebSocketServer) {
 }
 
 
+// map number to range
+// http://stackoverflow.com/questions/10756313
+Number.prototype.map=function(a,b,c,d){return c+(d-c)*((this-a)/(b-a))};
 
