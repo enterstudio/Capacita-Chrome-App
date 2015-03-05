@@ -65,8 +65,8 @@ SerialConnection.prototype.onConnectComplete = function(connectionInfo) {
   jQuery('#statusValue').html('Connected');
   jQuery('#webapp_link').show();
   ga_tracker.sendEvent('Serial connect', 'true');
-  // window.open('http://diyability-capacita.appspot.com/ctrl');
-  window.open('http://localhost:8000/ctrl');
+  window.open('http://diyability-capacita.appspot.com/ctrl');
+  // window.open('http://localhost:8000/ctrl');
 
 };
 
