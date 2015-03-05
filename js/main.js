@@ -58,7 +58,7 @@ SerialConnection.prototype.onConnectComplete = function(connectionInfo) {
   jQuery('button#connect').addClass('btn-primary').html('Disconnect');
   jQuery('#statusValue').html('Connected');
   jQuery('#webapp_link').show();
-  ga_tracker.sendEvent('Serial connect', 'true');
+  ga_tracker.sendEvent('Serial', 'connect', 'true');
   window.open('http://diyability-capacita.appspot.com/ctrl');
 
 };
@@ -94,7 +94,9 @@ SerialConnection.prototype.sends = function(msg) {
   if (this.connectionId < 0) {
     throw 'Invalid connection';
   }
-  serial.send(this.connectionId, str2ab(msg), function(sendInfo){}); // end cmd character  
+  serial.send(this.connectionId, str2ab(msg), function(sendInfo){
+    ga_tracker.sendEvent('Serial', 'send', msg);
+  }); // end cmd character  
 }
 
 SerialConnection.prototype.send = function(msg) {
@@ -152,7 +154,7 @@ connection.onReadLine.addListener(function(data) {
   }
 
   // Record switch press with "sendEvent".
-  ga_tracker.sendEvent('Switch press', data);
+  ga_tracker.sendEvent('Switch','press', data);
 
 
 });
