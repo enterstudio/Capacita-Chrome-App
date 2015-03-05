@@ -1,6 +1,6 @@
 var capacita = {
     analogCmds: [ "left_joy_x","left_joy_y","right_joy_x","right_joy_y"],
-    analogValMap = [128,0,32,64,96,128,159,191,223,255], // 0 reset to 128, 1-9 incremental to 0 -255
+    analogValMap : [128,0,32,64,96,128,159,191,223,255], // 0 reset to 128, 1-9 incremental to 0 -255
     controllerMap : {
         "*": "*",
         "cross": "X",

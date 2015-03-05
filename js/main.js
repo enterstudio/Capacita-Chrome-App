@@ -13,6 +13,11 @@ jQuery(document).ready(function() {
 });
 
 
+
+// map number to range
+// http://stackoverflow.com/questions/10756313
+Number.prototype.map=function(a,b,c,d){return c+(d-c)*((this-a)/(b-a))};
+
 /* Interprets an ArrayBuffer as UTF-8 encoded string data. */
 var ab2str = function(buf) {
   var bufView = new Uint8Array(buf);
@@ -60,7 +65,8 @@ SerialConnection.prototype.onConnectComplete = function(connectionInfo) {
   jQuery('#statusValue').html('Connected');
   jQuery('#webapp_link').show();
   ga_tracker.sendEvent('Serial connect', 'true');
-  window.open('http://diyability-capacita.appspot.com/ctrl');
+  // window.open('http://diyability-capacita.appspot.com/ctrl');
+  window.open('http://localhost:8000/ctrl');
 
 };
 
@@ -147,8 +153,12 @@ connection.onReadLine.addListener(function(data) {
   
   // version ? eg. 'v2'
   if (data[0] == 'v') {
-    currentVersion = parseInt[d[1]];
+    currentVersion = parseInt(data[1]);
+    console.log("setting version to :" + currentVersion);
+
     ga_tracker.sendEvent('Version', currentVersion); //record version in GA
+    versionElem = document.getElementById('board_version');
+    versionElem.innerHTML = currentVersion + " " + data;
 
   } else {
      var jsonData = JSON.stringify({
@@ -232,7 +242,9 @@ if (http.Server && http.WebSocketServer) {
       console.log(socketData);
       
       if (currentVersion == 1) {
+        
         console.log("version 1 socket to serial");
+        
         //version 1 data to serial                
         if (socketData.value != "*") {
           var tmpVal = socketData.value.toString();
@@ -259,28 +271,32 @@ if (http.Server && http.WebSocketServer) {
 
       } else if (currentVersion == 2) {
 
-        console.log("version 2 socket to serial");
+        // console.log("version 2 socket to serial");
         //version 2 data to serial
 
         var cmdReceived = socketData.cmd;
         var sendVal = socketData.value.toString();
         
         if (capacita.analogCmds.indexOf(cmdReceived) > -1) {
-          console.log('analog cmd');
-          sendVal = Math.round(sendVal.map(0,255,1,9));
+          sendVal = parseInt(sendVal);
+          if (sendVal == 128) {
+            sendVal = 0
+          } else {
+            sendVal = Math.round(sendVal.map(0,255,1,9));
+          }
         }
 
 
-        if (sendVal.length == 1) {
-          var valueToSendPrepared = sendVal;
-          console.log("value to send: " + valueToSendPrepared);
+        if (sendVal == '*' || (sendVal >=0 && sendVal <=9)) {
+          
+          console.log("value to send: " + sendVal);
           
           if (capacita.controllerMap.hasOwnProperty(cmdReceived)) {
             var cmdToSend = capacita.controllerMap[cmdReceived];
 
-            connection.send(cmdToSend+valueToSendPrepared);
+            connection.send(cmdToSend+sendVal);
 
-            console.log(cmdToSend + " " + valueToSendPrepared);
+            console.log(cmdToSend + " " + sendVal);
           }
 
         }
@@ -303,9 +319,4 @@ if (http.Server && http.WebSocketServer) {
     return true;
   });
 }
-
-
-// map number to range
-// http://stackoverflow.com/questions/10756313
-Number.prototype.map=function(a,b,c,d){return c+(d-c)*((this-a)/(b-a))};
 
