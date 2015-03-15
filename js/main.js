@@ -152,13 +152,19 @@ connection.onReadLine.addListener(function(data) {
   console.log('serial incoming: ' + data);
   
   // version ? eg. 'v2'
-  if (data[0] == 'v') {
+  if (data.length == 2 || data[0] == 'v') {
     currentVersion = parseInt(data[1]);
     console.log("setting version to :" + currentVersion);
 
     ga_tracker.sendEvent('Version', currentVersion); //record version in GA
     versionElem = document.getElementById('board_version');
-    versionElem.innerHTML = currentVersion + " " + data;
+    versionElem.innerHTML = data;
+
+  } else if ( data == 'flushing bt') {
+
+    ga_tracker.sendEvent('Version', currentVersion); //record version in GA
+    versionElem = document.getElementById('board_version');
+    versionElem.innerHTML = currentVersion;
 
   } else {
      var jsonData = JSON.stringify({

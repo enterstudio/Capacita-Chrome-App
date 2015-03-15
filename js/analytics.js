@@ -21,26 +21,7 @@ function startApp() {
   // setupAnalyticsListener();
 }
 
-/**
- * Adds a filter that captures hits being sent to Google Analytics.
- * Filters are useful for keeping track of what's happening in your app...
- * you can show this info in a debug panel, or log them to the console.
- */
-// function setupAnalyticsListener() {
-//   // Listen for event hits of the 'Flavor' category, and record them.
-//   previous = [];
-//   tracker.addFilter(
-//       analytics.filters.FilterBuilder.builder().
-//           whenHitType(analytics.HitTypes.EVENT).
-//           whenValue(analytics.Parameters.EVENT_CATEGORY, 'Flavor').
-//           whenValue(analytics.Parameters.EVENT_ACTION, 'Choose').
-//           applyFilter(
-//               function(hit) {
-//                 previous.push(
-//                     hit.getParameters().get(analytics.Parameters.EVENT_LABEL));
-//               }).
-//           build());
-// }
+
 
 window.onload = startApp;
 
