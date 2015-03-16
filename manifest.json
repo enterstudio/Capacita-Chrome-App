@@ -21,5 +21,8 @@
       "scripts": ["js/launch.js"],
       "transient": true
     }
+  },
+  "externally_connectable" : {
+    "matches": ["*://diyability-capacita.appspot.com/*"]
   }
 }

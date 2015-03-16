@@ -12,7 +12,22 @@ jQuery(document).ready(function() {
   
 });
 
+// For long-lived connections:
+chrome.runtime.onConnectExternal.addListener(function(port) {
+  console.log("PORT!", port);
 
+  setInterval(function() {
+    port.postMessage("hi from chrome app");
+    console.log("trying to say hi")
+  }, 1000);
+
+  port.onMessage.addListener(function(msg) {
+    // See other examples for sample onMessage handlers.
+    console.log("msg received: ", msg);
+    console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+  });
+});
 
 // map number to range
 // http://stackoverflow.com/questions/10756313
