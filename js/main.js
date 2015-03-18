@@ -2,7 +2,7 @@ const serial = chrome.serial;
 var connectionOpts = {
   'bitrate' : 9600
 };
-var currentVersion = 1; //default to v1 for now
+var currentVersion = 2; //default to v1 for now
 
 var sendQueue = [];
 
@@ -12,19 +12,53 @@ jQuery(document).ready(function() {
   
 });
 
+var appPort;
+
 // For long-lived connections:
 chrome.runtime.onConnectExternal.addListener(function(port) {
-  console.log("PORT!", port);
+  appPort = port;
 
-  setInterval(function() {
-    port.postMessage("hi from chrome app");
-    console.log("trying to say hi")
-  }, 1000);
+  appPort.postMessage(JSON.stringify({"status":"connected"}));
+  // setInterval(function() {
+  //   port.postMessage("hi from chrome app");
+  //   console.log("trying to say hi")
+  // }, 1000);
 
   port.onMessage.addListener(function(msg) {
     // See other examples for sample onMessage handlers.
-    console.log("msg received: ", msg);
-    console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    // console.log("msg received: " + msg);
+    // console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+    var socketData = JSON.parse(msg);
+    console.log(socketData);
+    
+
+    var cmdReceived = socketData.cmd;
+    var sendVal = socketData.value.toString();
+    
+    if (capacita.analogCmds.indexOf(cmdReceived) > -1) {
+      sendVal = parseInt(sendVal);
+      if (sendVal == 128) {
+        sendVal = 0
+      } else {
+        sendVal = Math.round(sendVal.map(0,255,1,9));
+      }
+    }
+
+
+    if (sendVal == '*' || (sendVal >=0 && sendVal <=9)) {
+      
+      console.log("value to send: " + sendVal);
+      
+      if (capacita.controllerMap.hasOwnProperty(cmdReceived)) {
+        var cmdToSend = capacita.controllerMap[cmdReceived];
+
+        connection.send(cmdToSend+sendVal);
+
+        console.log(cmdToSend + " " + sendVal);
+      }
+
+    }
 
   });
 });
@@ -187,6 +221,7 @@ connection.onReadLine.addListener(function(data) {
       data:data.trim()
     });
     
+    appPort.postMessage(jsonData);
     for (var i = 0; i < connectedSockets.length; i++) {
       connectedSockets[i].send(jsonData);
     }
