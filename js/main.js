@@ -2,6 +2,7 @@ const serial = chrome.serial;
 var connectionOpts = {
   'bitrate' : 9600
 };
+var currentVersion = 2; //default to v1 for now
 
 var sendQueue = [];
 
@@ -11,6 +12,60 @@ jQuery(document).ready(function() {
   
 });
 
+var appPort;
+
+// For long-lived connections:
+chrome.runtime.onConnectExternal.addListener(function(port) {
+  appPort = port;
+
+  appPort.postMessage(JSON.stringify({"status":"connected"}));
+  // setInterval(function() {
+  //   port.postMessage("hi from chrome app");
+  //   console.log("trying to say hi")
+  // }, 1000);
+
+  port.onMessage.addListener(function(msg) {
+    // See other examples for sample onMessage handlers.
+    // console.log("msg received: " + msg);
+    // console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+    var socketData = JSON.parse(msg);
+    console.log(socketData);
+    
+
+    var cmdReceived = socketData.cmd;
+    var sendVal = socketData.value.toString();
+    
+    if (capacita.analogCmds.indexOf(cmdReceived) > -1) {
+      sendVal = parseInt(sendVal);
+      if (sendVal == 128) {
+        sendVal = 0
+      } else {
+        sendVal = Math.round(sendVal.map(0,255,1,9));
+      }
+    }
+
+
+    if (sendVal == '*' || (sendVal >=0 && sendVal <=9)) {
+      
+      console.log("value to send: " + sendVal);
+      
+      if (capacita.controllerMap.hasOwnProperty(cmdReceived)) {
+        var cmdToSend = capacita.controllerMap[cmdReceived];
+
+        connection.send(cmdToSend+sendVal);
+
+        console.log(cmdToSend + " " + sendVal);
+      }
+
+    }
+
+  });
+});
+
+// map number to range
+// http://stackoverflow.com/questions/10756313
+Number.prototype.map=function(a,b,c,d){return c+(d-c)*((this-a)/(b-a))};
 
 /* Interprets an ArrayBuffer as UTF-8 encoded string data. */
 var ab2str = function(buf) {
@@ -60,6 +115,7 @@ SerialConnection.prototype.onConnectComplete = function(connectionInfo) {
   jQuery('#webapp_link').show();
   ga_tracker.sendEvent('Serial', 'connect', 'true');
   window.open('http://diyability-capacita.appspot.com/ctrl');
+  // window.open('http://localhost:8000/ctrl');
 
 };
 
@@ -143,19 +199,42 @@ connection.onConnect.addListener(function() {
 });
 
 connection.onReadLine.addListener(function(data) {
-  console.log('serial: ' + data);
-  var jsonData = JSON.stringify({
-    type:'serial',
-    data:data.trim()
-  });
+
+  console.log('serial incoming: ' + data);
   
-  for (var i = 0; i < connectedSockets.length; i++) {
-    connectedSockets[i].send(jsonData);
+  // version ? eg. 'v2'
+  if (data.length == 2 || data[0] == 'v') {
+    currentVersion = parseInt(data[1]);
+    console.log("setting version to :" + currentVersion);
+
+    ga_tracker.sendEvent('Version', currentVersion); //record version in GA
+    versionElem = document.getElementById('board_version');
+    versionElem.innerHTML = data;
+
+  } else if ( data == 'flushing bt') {
+
+
+    ga_tracker.sendEvent('Version', currentVersion); //record version in GA
+    versionElem = document.getElementById('board_version');
+    versionElem.innerHTML = currentVersion;
+
+
+  } else {
+     var jsonData = JSON.stringify({
+      type:'serial',
+      data:data.trim()
+    });
+    
+    appPort.postMessage(jsonData);
+    for (var i = 0; i < connectedSockets.length; i++) {
+      connectedSockets[i].send(jsonData);
+    }
+
+    // Record switch press with "sendEvent".
+    ga_tracker.sendEvent('Switch press', data);
+
   }
-
-  // Record switch press with "sendEvent".
-  ga_tracker.sendEvent('Switch','press', data);
-
+ 
 
 });
 
@@ -216,36 +295,73 @@ if (http.Server && http.WebSocketServer) {
     var socket = req.accept();
     connectedSockets.push(socket);
 
-    // When a message is received on one socket, rebroadcast it on all
-    // connected sockets.
+    
     socket.addEventListener('message', function(e) {
       
       var socketData = JSON.parse(e.data);
       console.log(socketData);
       
-      
-      if (socketData.value != "*") {
-        var tmpVal = socketData.value.toString();
-        if (tmpVal.length == 1) {
-          tmpVal = "00" + tmpVal;
-        } else if (tmpVal.length == 2) {
-          tmpVal = "0" + tmpVal;
-        }
-        var valueToSendPrepared =  tmpVal; // data['value'].encode('ascii','ignore');
-        console.log("value to send: " + valueToSendPrepared);
+      if (currentVersion == 1) {
         
-      } else {
-        var valueToSendPrepared = "**" + socketData.value.toString();
+        console.log("version 1 socket to serial");
+        
+        //version 1 data to serial                
+        if (socketData.value != "*") {
+          var tmpVal = socketData.value.toString();
+          if (tmpVal.length == 1) {
+            tmpVal = "00" + tmpVal;
+          } else if (tmpVal.length == 2) {
+            tmpVal = "0" + tmpVal;
+          }
+          var valueToSendPrepared =  tmpVal; // data['value'].encode('ascii','ignore');
+          console.log("value to send: " + valueToSendPrepared);
+          
+        } else {
+          var valueToSendPrepared = "**" + socketData.value.toString();
+        }
+
+        var cmdReceived = socketData.cmd;
+        if (capacita.controllerMap.hasOwnProperty(cmdReceived)) {
+          var cmdToSend = capacita.controllerMap[cmdReceived];
+
+          connection.send(cmdToSend+valueToSendPrepared);
+
+          console.log(cmdToSend + " " + valueToSendPrepared);
+        }
+
+      } else if (currentVersion == 2) {
+
+        // console.log("version 2 socket to serial");
+        //version 2 data to serial
+
+        var cmdReceived = socketData.cmd;
+        var sendVal = socketData.value.toString();
+        
+        if (capacita.analogCmds.indexOf(cmdReceived) > -1) {
+          sendVal = parseInt(sendVal);
+          if (sendVal == 128) {
+            sendVal = 0
+          } else {
+            sendVal = Math.round(sendVal.map(0,255,1,9));
+          }
+        }
+
+
+        if (sendVal == '*' || (sendVal >=0 && sendVal <=9)) {
+          
+          console.log("value to send: " + sendVal);
+          
+          if (capacita.controllerMap.hasOwnProperty(cmdReceived)) {
+            var cmdToSend = capacita.controllerMap[cmdReceived];
+
+            connection.send(cmdToSend+sendVal);
+
+            console.log(cmdToSend + " " + sendVal);
+          }
+
+        }
       }
 
-      var cmdReceived = socketData.cmd;
-      if (capacita.controllerMap.hasOwnProperty(cmdReceived)) {
-        var cmdToSend = capacita.controllerMap[cmdReceived];
-
-        connection.send(cmdToSend+valueToSendPrepared);
-
-        // console.log(cmdToSend + " " + valueToSendPrepared);
-      }
 
       
     });
@@ -263,6 +379,4 @@ if (http.Server && http.WebSocketServer) {
     return true;
   });
 }
-
-
 
